@@ -5,7 +5,7 @@ Validates specified top level domain against a predefined list of TLDs.
 ```
 use Net::Domain::TLD::Validate;
 
-print "dog is exists\n" if ( Net::Domain::TLD::Validate::tld_exists('dog') );
+print "dog exists\n"    if ( Net::Domain::TLD::Validate::tld_exists('dog') );
 print "god not found\n" if ( Net::Domain::TLD::Validate::tld_exists('god') );
 
 ```
