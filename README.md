@@ -3,10 +3,12 @@
 Validates specified top level domain against a predefined list of TLDs.
 
 ```
-use Net::Domain::TLD::Validate;
+use Net::Domain::TLD::Validate 'tld_exists';
 
-print "dog exists\n"    if ( Net::Domain::TLD::Validate::tld_exists('dog') );
-print "god not found\n" if ( Net::Domain::TLD::Validate::tld_exists('god') );
+print "org exists\n"    if     ( tld_exists('org')      );
+print "net exists\n"    if     ( tld_exists('net')      );
+print "dog exists\n"    if     ( tld_exists('good.dog') );
+print "god not found\n" unless ( tld_exists('dead.god') );
 
 ```
 
