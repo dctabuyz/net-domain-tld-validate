@@ -1,0 +1,8 @@
+Changes
+Makefile.PL
+MANIFEST
+README
+README.md
+bin/update-net-domain-tld-validate.pl
+lib/Net/Domain/TLD/Validate.pm
+t/t01.t
