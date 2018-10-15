@@ -38,7 +38,7 @@ SKIP: {
 
     require_ok($filename);
 
-    like($Net::Domain::TLD::Validate::VERSION, '/^20\d+$/', 'version looks good');
+    like($Net::Domain::TLD::Validate::VERSION, '/^\d+\.20\d+$/', 'version looks good');
 
     ok(Net::Domain::TLD::Validate::tld_exists('ru'),  '.ru  exists');
     ok(Net::Domain::TLD::Validate::tld_exists('com'), '.com exists');
