@@ -43,7 +43,7 @@ unless ( $response->is_success )
 }
 
 # Content-Type: text/plain; charset=UTF-8
-my $content_type = [ split(';', $response->header('Content-Type'), 2) ]->[0] || '';
+my $content_type = [ split(/;/, $response->header('Content-Type') || '', 2) ]->[0] || '';
 unless ( RESPONSE_EXPECTED_TYPE eq $content_type )
 {
     warn "invalid content type, expected `" . RESPONSE_EXPECTED_TYPE . "' got `$content_type'\n";
