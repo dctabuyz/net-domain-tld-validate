@@ -6,6 +6,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     'NAME'              => 'Net::Domain::TLD::Validate',
+    'DISTNAME'          => 'Net-Domain-TLD-Validate',
     'LICENSE'           => 'perl',
     'AUTHOR'            => 'dctabuyz@ya.ru',
     'VERSION_FROM'      => 'lib/Net/Domain/TLD/Validate.pm',
