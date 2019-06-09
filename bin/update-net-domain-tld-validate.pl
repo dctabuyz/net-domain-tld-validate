@@ -8,6 +8,7 @@ use warnings;
 use POSIX qw(strftime);
 use File::Temp qw(tempfile);
 use File::Basename;
+use Getopt::Long;
 
 use LWP::UserAgent;
 
@@ -23,50 +24,96 @@ use constant ERROR_INIT    => 1;
 use constant ERROR_FETCH   => 2;
 use constant ERROR_PROCESS => 3;
 
-my ($response_fh, $response_file) = tempfile(basename($0, '.pl') . '__XXXXXXXX', UNLINK => 1, TMPDIR => 1);
+use constant DEFAULT_OUT_FILE => '-';
 
-my %params = (
+my $src_url  = TLD_DATA_SOURCE;
+my $src_file;
+my $src_fh;
+my $dst_file = DEFAULT_OUT_FILE;
+my $dst_fh   = *STDOUT;
 
-    'agent'    => USER_AGENT,
-    'max_size' => RESPONSE_MAX_SIZE_BYTES
-);
+GetOptions ( 'source-url|u|url=s'    => \$src_url,
+             'source-file|f|file=s'  => \$src_file,
+             'out|to|dst|out-file=s' => \$dst_file
 
-my $useragent = LWP::UserAgent->new(%params);
-my $response  = $useragent->get(TLD_DATA_SOURCE, ':content_file' => $response_file);
+) or die("Invalid command line arguments\n");
 
-unless ( $response->is_success )
+sub get_fh_from_remote
 {
-    warn 'network request failed: unable to fetch data from `' . TLD_DATA_SOURCE . "'\n";
-    warn 'error is `' . $response->status_line . "'\n";
+    my $url = shift;
 
-    exit ERROR_FETCH;
-}
+    my ($response_fh, $response_file) = tempfile(basename($0, '.pl') . '__XXXXXXXX', UNLINK => 1, TMPDIR => 1);
 
-# Content-Type: text/plain; charset=UTF-8
-my $content_type = [ split(/;/, $response->header('Content-Type') || '', 2) ]->[0] || '';
-unless ( RESPONSE_EXPECTED_TYPE eq $content_type )
-{
-    warn "invalid content type, expected `" . RESPONSE_EXPECTED_TYPE . "' got `$content_type'\n";
+    my %params = (
 
-    exit ERROR_FETCH;
-}
+        'agent'    => USER_AGENT,
+        'max_size' => RESPONSE_MAX_SIZE_BYTES
+    );
 
-# если превысили свои ограничения
-if ( my $aborted = $response->header('Client-Aborted') )
-{
-    if ( 'max_size' eq $aborted )
+    my $useragent = LWP::UserAgent->new(%params);
+    my $response  = $useragent->get($src_url, ':content_file' => $response_file);
+
+    unless ( $response->is_success )
     {
-        warn "data fetched but response size limit exceeded, see/tune MAX_FILESIZE_BYTES\n";
-    }
-    else
-    {
-        warn "data fetched but something is wrong: `$aborted'\n";
+        warn 'network request failed: unable to fetch data from `' . TLD_DATA_SOURCE . "'\n";
+        warn 'error is `' . $response->status_line . "'\n";
+
+        exit ERROR_FETCH;
     }
 
-    exit ERROR_FETCH;
+    # Content-Type: text/plain; charset=UTF-8
+    my $content_type = [ split(/;/, $response->header('Content-Type') || '', 2) ]->[0] || '';
+    unless ( RESPONSE_EXPECTED_TYPE eq $content_type )
+    {
+        warn "invalid content type, expected `" . RESPONSE_EXPECTED_TYPE . "' got `$content_type'\n";
+
+        exit ERROR_FETCH;
+    }
+
+    # если превысили свои ограничения
+    if ( my $aborted = $response->header('Client-Aborted') )
+    {
+        if ( 'max_size' eq $aborted )
+        {
+            warn "data fetched but response size limit exceeded, see/tune MAX_FILESIZE_BYTES\n";
+        }
+        else
+        {
+            warn "data fetched but something is wrong: `$aborted'\n";
+        }
+
+        exit ERROR_FETCH;
+    }
+
+    return $response_fh;
 }
 
-my $data_version = $response_fh->getline;
+sub get_fh_from_local
+{
+    my $file = shift;
+    my $fh;
+
+    unless ( open($fh, '<', $file) )
+    {
+        warn "unable to open file `$file' is not readable\n";
+        exit ERROR_FETCH;
+    }
+
+    return $fh;
+}
+
+$src_fh = ( $src_file ) ? get_fh_from_local($src_file) : get_fh_from_remote($src_url);
+
+if ( $dst_file and $dst_file ne DEFAULT_OUT_FILE )
+{
+    unless ( open($dst_fh, '>', $dst_file) )
+    {
+        warn "unable to open file $dst_file for write: `$!'";
+        exit ERROR_PROCESS;
+    }
+}
+
+my $data_version = $src_fh->getline;
 
 unless ( $data_version and $data_version =~ /^# Version (\d+), Last Updated/ and $data_version = $1 )
 {
@@ -78,9 +125,9 @@ unless ( $data_version and $data_version =~ /^# Version (\d+), Last Updated/ and
     exit ERROR_PROCESS;
 }
 
-printf join('', <DATA>, "\n"), strftime("%Y-%m-%d %T UTC", gmtime), $data_version;
+printf $dst_fh join('', <DATA>, "\n"), strftime("%Y-%m-%d %T UTC", gmtime), $data_version;
 
-unless ( print <$response_fh> )
+unless ( $dst_fh->print(<$src_fh>) )
 {
     warn "unable to write: `$!'";
     exit ERROR_PROCESS;
