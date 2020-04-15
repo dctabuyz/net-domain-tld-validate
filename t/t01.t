@@ -40,7 +40,7 @@ SKIP: {
 
     ok($Net::Domain::TLD::Validate::VERSION > 0, 'version is correct');
 
-    like($Net::Domain::TLD::Validate::VERSION, '/^\d+\.20\d+$/', 'version format looks good');
+    like($Net::Domain::TLD::Validate::VERSION, '/^v\d+\.\d+\.\d+$/', 'version format looks good');
 
     ok(Net::Domain::TLD::Validate::tld_exists('ru'),  '.ru  exists');
     ok(Net::Domain::TLD::Validate::tld_exists('com'), '.com exists');
