@@ -16,3 +16,7 @@ The list of TLDs can be updated at any time
 ```
 $ bin/update-net-domain-tld-validate.pl > lib/Net/Domain/TLD/Validate.pm
 ```
+
+## TODO
+
+* timemachine (get data from https://www.iana.org/domains/root/db)
